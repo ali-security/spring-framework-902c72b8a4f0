@@ -251,12 +251,12 @@ public final class ContentDisposition {
 		}
 		if (this.name != null) {
 			sb.append("; name=\"");
-			sb.append(this.name).append('\"');
+			sb.append(escapeQuotationsInFilename(appendName(new StringBuilder(), this.name).toString())).append('\"');
 		}
 		if (this.filename != null) {
 			if (this.charset == null || StandardCharsets.US_ASCII.equals(this.charset)) {
 				sb.append("; filename=\"");
-				sb.append(escapeQuotationsInFilename(this.filename)).append('\"');
+				sb.append(escapeQuotationsInFilename(appendName(new StringBuilder(), this.filename).toString())).append('\"');
 			}
 			else {
 				sb.append("; filename*=");
@@ -498,6 +498,29 @@ public final class ContentDisposition {
 		return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 				c == '!' || c == '#' || c == '$' || c == '&' || c == '+' || c == '-' ||
 				c == '.' || c == '^' || c == '_' || c == '`' || c == '|' || c == '~';
+	}
+
+	/**
+	 * Append the given {@literal name} or {@literal filename} parameter value to
+	 * the given buffer, stripping control characters.
+	 * <p>Such characters must never be written to the header value, since they
+	 * would allow an attacker in control of the value to break the structure of
+	 * the header, or the framing of an outbound multipart body.
+	 * <p>Note that this must be applied <em>before</em> escaping quotation marks
+	 * with {@link #escapeQuotationsInFilename(String)}, so that a trailing
+	 * backslash exposed by the stripping is removed rather than left to escape
+	 * the closing quote.
+	 */
+	private static StringBuilder appendName(StringBuilder buffer, String name) {
+		for (int i = 0; i < name.length() ; i++) {
+			char c = name.charAt(i);
+			// strip control characters
+			if (c <= 0x1F || c == 0x7F) {
+				continue;
+			}
+			buffer.append(c);
+		}
+		return buffer;
 	}
 
 	private static String escapeQuotationsInFilename(String filename) {

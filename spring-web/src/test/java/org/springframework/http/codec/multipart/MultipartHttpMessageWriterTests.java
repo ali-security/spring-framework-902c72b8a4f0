@@ -207,6 +207,27 @@ public class MultipartHttpMessageWriterTests extends AbstractLeakCheckingTests {
 		assertThat(requestParts.getFirst("name 2").name()).isEqualTo("name 2");
 	}
 
+	@Test
+	public void writeMultipartFormDataWithControlCharacters() {
+		MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
+		bodyBuilder.part("evil\r\nContent-Type: text/html\r\n\r\ninjected", "value 1");
+		bodyBuilder.part("file", "value 2")
+				.headers(h -> h.setContentDispositionFormData("file", "logo.jpg\r\n\r\n--boundary--"));
+		Mono<MultiValueMap<String, HttpEntity<?>>> result = Mono.just(bodyBuilder.build());
+
+		Map<String, Object> hints = Collections.emptyMap();
+		this.writer.write(result, null, MediaType.MULTIPART_FORM_DATA, this.response, hints)
+				.block(Duration.ofSeconds(5));
+
+		String body = this.response.getBodyAsString().block(Duration.ofSeconds(5));
+		assertThat(body).isNotNull();
+		assertThat(body).contains("name=\"evilContent-Type: text/htmlinjected\"");
+		assertThat(body).contains("filename=\"logo.jpg--boundary--\"");
+		// the framing of the multipart body must not be under the control of the part name or filename
+		assertThat(body).doesNotContain("\r\n\r\ninjected");
+		assertThat(body).doesNotContain("\r\n\r\n--boundary--");
+	}
+
 	@SuppressWarnings("ConstantConditions")
 	private String decodeToString(Part part) {
 		return StringDecoder.textPlainOnly().decodeToMono(part.content(),

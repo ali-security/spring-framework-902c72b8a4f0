@@ -274,6 +274,38 @@ public class FormHttpMessageConverterTests {
 	}
 
 	@Test
+	public void writeMultipartWithControlCharacters() throws Exception {
+		Resource logo = new ClassPathResource("/org/springframework/http/converter/logo.jpg") {
+			@Override
+			public String getFilename() {
+				return "logo.jpg\r\n\r\n--boundary--";
+			}
+		};
+
+		MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+		parts.add("evil\r\nContent-Type: text/html\r\n\r\ninjected", "value 1");
+		parts.add("logo", logo);
+
+		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
+		this.converter.write(parts, MULTIPART_FORM_DATA, outputMessage);
+
+		String body = outputMessage.getBodyAsString(StandardCharsets.UTF_8);
+		assertThat(body).contains("name=\"evilContent-Type: text/htmlinjected\"");
+		assertThat(body).contains("filename=\"logo.jpg--boundary--\"");
+		// the framing of the multipart body must not be under the control of the part name or filename
+		assertThat(body).doesNotContain("\r\n\r\ninjected");
+		assertThat(body).doesNotContain("\r\n\r\n--boundary--");
+
+		// see if Commons FileUpload can read what we wrote
+		FileUpload fileUpload = new FileUpload(new DiskFileItemFactory());
+		List<FileItem> items = fileUpload.parseRequest(new MockHttpOutputMessageRequestContext(outputMessage));
+		assertThat(items.size()).isEqualTo(2);
+		assertThat(items.get(0).getFieldName()).isEqualTo("evilContent-Type: text/htmlinjected");
+		assertThat(items.get(0).getString()).isEqualTo("value 1");
+		assertThat(items.get(1).getName()).isEqualTo("logo.jpg--boundary--");
+	}
+
+	@Test
 	public void writeMultipartCharset() throws Exception {
 		MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
 		Resource logo = new ClassPathResource("/org/springframework/http/converter/logo.jpg");

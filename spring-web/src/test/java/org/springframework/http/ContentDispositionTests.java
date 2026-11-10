@@ -274,4 +274,97 @@ class ContentDispositionTests {
 						.toString());
 	}
 
+	@Test
+	void formatWithNameWithControlCharacters() {
+		String header = ContentDisposition.formData()
+				.name("foo\r\nX-Injected: evil")
+				.build()
+				.toString();
+
+		assertThat(header).isEqualTo("form-data; name=\"fooX-Injected: evil\"");
+		assertThat(header).doesNotContain("\r", "\n");
+	}
+
+	@Test
+	void formatWithFilenameWithControlCharacters() {
+		String header = ContentDisposition.attachment()
+				.filename("foo.txt\r\nX-Injected: evil")
+				.build()
+				.toString();
+
+		assertThat(header).isEqualTo("attachment; filename=\"foo.txtX-Injected: evil\"");
+		assertThat(header).doesNotContain("\r", "\n");
+	}
+
+	@Test
+	void formatWithFilenameWithControlCharactersUsingUsAscii() {
+		String header = ContentDisposition.attachment()
+				.filename("foo.txt\r\nX-Injected: evil", StandardCharsets.US_ASCII)
+				.build()
+				.toString();
+
+		assertThat(header).isEqualTo("attachment; filename=\"foo.txtX-Injected: evil\"");
+		assertThat(header).doesNotContain("\r", "\n");
+	}
+
+	@Test
+	void formatStripsAllControlCharacters() {
+		StringBuilder controlChars = new StringBuilder();
+		for (int i = 0x00; i <= 0x1F; i++) {
+			controlChars.append((char) i);
+		}
+		controlChars.append((char) 0x7F);
+		String value = "a" + controlChars + "b";
+
+		assertThat(ContentDisposition.formData().name(value).filename(value).build().toString())
+				.isEqualTo("form-data; name=\"ab\"; filename=\"ab\"");
+	}
+
+	@Test
+	void formatWithFilenameEndingInBackslashFollowedByControlCharacters() {
+		// Control characters must be stripped *before* quotation marks are escaped:
+		// otherwise the exposed trailing backslash escapes the closing quote.
+		String header = ContentDisposition.attachment()
+				.filename("foo.txt\\\r\n")
+				.build()
+				.toString();
+
+		assertThat(header).isEqualTo("attachment; filename=\"foo.txt\"");
+		assertThat(header).doesNotContain("\r", "\n");
+	}
+
+	@Test
+	void formatWithNameEndingInBackslashFollowedByControlCharacters() {
+		String header = ContentDisposition.formData()
+				.name("foo\\\r\n")
+				.filename("foo.txt")
+				.build()
+				.toString();
+
+		assertThat(header).isEqualTo("form-data; name=\"foo\"; filename=\"foo.txt\"");
+		assertThat(ContentDisposition.parse(header).getFilename()).isEqualTo("foo.txt");
+	}
+
+	@Test
+	void formatWithNameWithQuotes() {
+		String header = ContentDisposition.formData()
+				.name("foo\"; filename=\"evil.sh")
+				.build()
+				.toString();
+
+		assertThat(header).isEqualTo("form-data; name=\"foo\\\"; filename=\\\"evil.sh\"");
+		assertThat(ContentDisposition.parse(header).getFilename()).isNull();
+	}
+
+	@Test
+	void formatWithEncodedFilenameWithControlCharacters() {
+		String header = ContentDisposition.attachment()
+				.filename("foo\r\n.txt", StandardCharsets.UTF_8)
+				.build()
+				.toString();
+
+		assertThat(header).isEqualTo("attachment; filename*=UTF-8''foo%0D%0A.txt");
+		assertThat(header).doesNotContain("\r", "\n");
+	}
+
 }
