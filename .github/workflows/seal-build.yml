@@ -1,0 +1,97 @@
+# Authored for the sealed build: upstream builds releases on Concourse
+# (ci/scripts/build-project.sh: ./gradlew --max-workers=4 build publishAllPublicationsToDeploymentRepository)
+# on JDK 8 and ships no GitHub Actions workflow that builds or tests. This mirrors
+# that `build`, split into parallel module legs; the spring-web leg builds and
+# uploads the released jar.
+name: Seal Build spring-web
+
+on:
+  workflow_dispatch:
+    inputs:
+      test-filter:
+        description: "Gradle test selector, e.g. ':spring-web:test --tests org.springframework.web.util.UriComponentsBuilderTests'; empty runs the full build and every module's suite"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_FLAGS: -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false --no-daemon --max-workers=4 --console=plain --no-scan --no-build-cache --stacktrace --continue
+
+jobs:
+  build:
+    name: ${{ matrix.leg.name }} (JDK 8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        leg:
+          - { name: spring-web, artifact: true, tasks: ":spring-web:build" }
+          - { name: core, artifact: false, tasks: ":spring-jcl:check :spring-core:check :spring-instrument:check" }
+          - { name: beans-context, artifact: false, tasks: ":spring-beans:check :spring-aop:check :spring-expression:check :spring-context:check :spring-context-indexer:check :spring-context-support:check :spring-aspects:check" }
+          - { name: data, artifact: false, tasks: ":spring-tx:check :spring-jdbc:check :spring-orm:check :spring-oxm:check :spring-r2dbc:check :spring-jms:check" }
+          - { name: messaging-websocket, artifact: false, tasks: ":spring-messaging:check :spring-websocket:check" }
+          - { name: webflux, artifact: false, tasks: ":spring-webflux:check" }
+          - { name: webmvc, artifact: false, tasks: ":spring-webmvc:check" }
+          - { name: test-integration, artifact: false, tasks: ":spring-test:check :integration-tests:check :framework-bom:build" }
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install Gradle test logging init script
+        shell: bash
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/seal-test-results.gradle <<'EOF'
+          allprojects {
+            tasks.withType(Test).configureEach { t ->
+              t.outputs.upToDateWhen { false }
+              t.outputs.cacheIf { false }
+              t.testLogging {
+                events "failed"
+                exceptionFormat "full"
+              }
+              t.afterSuite { desc, result ->
+                if (desc.parent == null) {
+                  println "TEST SUMMARY ${t.path}: tests=${result.testCount} passed=${result.successfulTestCount} failed=${result.failedTestCount} skipped=${result.skippedTestCount} result=${result.resultType}"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Build and test
+        if: ${{ inputs.test-filter == '' || matrix.leg.artifact }}
+        shell: bash
+        run: |
+          mkdir -p seal-logs
+          if [ -n "${{ inputs.test-filter }}" ]; then
+            ./gradlew $GRADLE_FLAGS :spring-web:jar ${{ inputs.test-filter }} 2>&1 | tee seal-logs/gradle.log
+          else
+            ./gradlew $GRADLE_FLAGS ${{ matrix.leg.tasks }} 2>&1 | tee seal-logs/gradle.log
+          fi
+
+      - name: Upload spring-web jar
+        if: ${{ matrix.leg.artifact }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-web-jar
+          path: spring-web/build/libs/spring-web-5.3.26.jar
+          if-no-files-found: error
+
+      - name: Report test results and skip reasons
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          echo "---- Gradle task test summaries ----"
+          [ -f seal-logs/gradle.log ] && sed -n '/TEST SUMMARY\|FAILED/p' seal-logs/gradle.log
+          python3 .github/scripts/seal_test_report.py "${{ matrix.leg.name }}"
