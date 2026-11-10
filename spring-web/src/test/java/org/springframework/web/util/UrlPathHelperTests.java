@@ -16,6 +16,8 @@
 
 package org.springframework.web.util;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -137,6 +139,23 @@ class UrlPathHelperTests {
 		testKeepSemicolonContent("/test;jsessionid=1234/anotherTest", "/test/anotherTest");
 		testKeepSemicolonContent("/test;jsessionid=;a=b", "/test;a=b");
 		testKeepSemicolonContent("/somethingLongerThan12;jsessionid=1234", "/somethingLongerThan12");
+	}
+
+	@Test  // CVE-2024-38820
+	void getRequestKeepSemicolonContentWithTurkishDefaultLocale() {
+		Locale defaultLocale = Locale.getDefault();
+		try {
+			Locale.setDefault(new Locale("tr", "TR"));
+			helper.setRemoveSemicolonContent(false);
+
+			testKeepSemicolonContent("/test;JSESSIONID=1234", "/test");
+			testKeepSemicolonContent("/test;JSESSIONID=1234;a=b", "/test;a=b");
+			testKeepSemicolonContent("/test;a=b;JSESSIONID=1234;c=d", "/test;a=b;c=d");
+			testKeepSemicolonContent("/test;JSessionId=1234/anotherTest", "/test/anotherTest");
+		}
+		finally {
+			Locale.setDefault(defaultLocale);
+		}
 	}
 
 	private void testKeepSemicolonContent(String requestUri, String expectedPath) {

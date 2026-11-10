@@ -17,7 +17,7 @@
 package org.springframework.web.socket.sockjs.client;
 
 import java.net.URI;
-
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -74,7 +74,7 @@ class SockJsUrlInfoTests {
 		SockJsUrlInfo info = new SockJsUrlInfo(new URI(scheme + "://example.com"));
 		String serverId = info.getServerId();
 		String sessionId = info.getSessionId();
-		String transport = transportType.toString().toLowerCase();
+		String transport = transportType.toString().toLowerCase(Locale.ROOT);
 		URI expected = new URI(expectedScheme + "://example.com/" + serverId + "/" + sessionId + "/" + transport);
 		assertThat(info.getTransportUrl(transportType)).isEqualTo(expected);
 	}

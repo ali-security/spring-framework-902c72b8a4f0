@@ -798,7 +798,7 @@ public class CheckboxesTagTests extends AbstractFormTagTests {
 
 		@Override
 		public void setAsText(String text) throws IllegalArgumentException {
-			setValue(text.toLowerCase());
+			setValue(text.toLowerCase(Locale.ROOT));
 		}
 
 		@Override

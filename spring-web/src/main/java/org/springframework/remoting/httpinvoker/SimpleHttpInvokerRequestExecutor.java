@@ -24,6 +24,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
+import java.util.Locale;
 
 import org.springframework.context.i18n.LocaleContext;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -227,7 +228,7 @@ public class SimpleHttpInvokerRequestExecutor extends AbstractHttpInvokerRequest
 	 */
 	protected boolean isGzipResponse(HttpURLConnection con) {
 		String encodingHeader = con.getHeaderField(HTTP_HEADER_CONTENT_ENCODING);
-		return (encodingHeader != null && encodingHeader.toLowerCase().contains(ENCODING_GZIP));
+		return (encodingHeader != null && encodingHeader.toLowerCase(Locale.ROOT).contains(ENCODING_GZIP));
 	}
 
 }

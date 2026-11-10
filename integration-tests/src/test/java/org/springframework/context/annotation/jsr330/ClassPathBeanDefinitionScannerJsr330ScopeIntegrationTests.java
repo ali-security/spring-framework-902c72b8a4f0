@@ -20,7 +20,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
+import java.util.Locale;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
@@ -316,7 +316,7 @@ class ClassPathBeanDefinitionScannerJsr330ScopeIntegrationTests {
 						break;
 					}
 					else if (annDef.getMetadata().getMetaAnnotationTypes(type).contains(javax.inject.Scope.class.getName())) {
-						metadata.setScopeName(type.substring(type.length() - 13, type.length() - 6).toLowerCase());
+						metadata.setScopeName(type.substring(type.length() - 13, type.length() - 6).toLowerCase(Locale.ROOT));
 						metadata.setScopedProxyMode(scopedProxyMode);
 						break;
 					}

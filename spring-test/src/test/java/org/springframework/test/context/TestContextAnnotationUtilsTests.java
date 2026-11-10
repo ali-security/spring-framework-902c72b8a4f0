@@ -21,6 +21,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Locale;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,7 +78,7 @@ class TestContextAnnotationUtilsTests {
 
 		@Test
 		void overriddenDefaultMode() {
-			setGlobalFlag("\t" + OVERRIDE.name().toLowerCase() + "   ");
+			setGlobalFlag("\t" + OVERRIDE.name().toLowerCase(Locale.ROOT) + "   ");
 			assertThat(searchEnclosingClass(OuterTestCase.class)).isFalse();
 			assertThat(searchEnclosingClass(OuterTestCase.NestedTestCase.class)).isFalse();
 			assertThat(searchEnclosingClass(OuterTestCase.NestedTestCase.DoubleNestedTestCase.class)).isFalse();

@@ -18,6 +18,10 @@ package org.springframework.web.multipart.support;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Locale;
+
+import javax.servlet.http.Part;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,11 +29,13 @@ import org.springframework.http.MockHttpOutputMessage;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.testfixture.servlet.MockHttpServletRequest;
 import org.springframework.web.testfixture.servlet.MockPart;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  * Unit tests for {@link StandardMultipartHttpServletRequest}.
@@ -89,6 +95,39 @@ public class StandardMultipartHttpServletRequestTests {
 						"Content-Length: 6\r\n" +
 						"\r\n" +
 						"myBody\r\n");
+	}
+
+	@Test  // CVE-2024-38820
+	public void maxUploadSizeExceededWithTurkishDefaultLocale() {
+		Locale defaultLocale = Locale.getDefault();
+		try {
+			Locale.setDefault(new Locale("tr", "TR"));
+			MockHttpServletRequest request = new MockHttpServletRequest() {
+				@Override
+				public Collection<Part> getParts() {
+					throw new IllegalStateException("REQUEST SIZE LIMIT EXCEEDED");
+				}
+			};
+			assertThatExceptionOfType(MaxUploadSizeExceededException.class)
+					.isThrownBy(() -> new StandardMultipartHttpServletRequest(request));
+		}
+		finally {
+			Locale.setDefault(defaultLocale);
+		}
+	}
+
+	@Test  // CVE-2024-38820
+	public void isMultipartRequestWithTurkishDefaultLocale() {
+		Locale defaultLocale = Locale.getDefault();
+		try {
+			Locale.setDefault(new Locale("tr", "TR"));
+			MockHttpServletRequest request = new MockHttpServletRequest();
+			request.setContentType("MULTIPART/FORM-DATA; boundary=xyz");
+			assertThat(MultipartResolutionDelegate.isMultipartRequest(request)).isTrue();
+		}
+		finally {
+			Locale.setDefault(defaultLocale);
+		}
 	}
 
 

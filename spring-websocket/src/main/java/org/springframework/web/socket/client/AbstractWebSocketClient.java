@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.Locale;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -85,7 +85,7 @@ public abstract class AbstractWebSocketClient implements WebSocketClient {
 		HttpHeaders headersToUse = new HttpHeaders();
 		if (headers != null) {
 			headers.forEach((header, values) -> {
-				if (values != null && !specialHeaders.contains(header.toLowerCase())) {
+				if (values != null && !specialHeaders.contains(header.toLowerCase(Locale.ROOT))) {
 					headersToUse.put(header, values);
 				}
 			});

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -233,7 +234,7 @@ public class GenericTableMetaDataProvider implements TableMetaDataProvider {
 			return tableName.toUpperCase();
 		}
 		else if (isStoresLowerCaseIdentifiers()) {
-			return tableName.toLowerCase();
+			return tableName.toLowerCase(Locale.ROOT);
 		}
 		else {
 			return tableName;
@@ -250,7 +251,7 @@ public class GenericTableMetaDataProvider implements TableMetaDataProvider {
 			return catalogName.toUpperCase();
 		}
 		else if (isStoresLowerCaseIdentifiers()) {
-			return catalogName.toLowerCase();
+			return catalogName.toLowerCase(Locale.ROOT);
 		}
 		else {
 			return catalogName;
@@ -267,7 +268,7 @@ public class GenericTableMetaDataProvider implements TableMetaDataProvider {
 			return schemaName.toUpperCase();
 		}
 		else if (isStoresLowerCaseIdentifiers()) {
-			return schemaName.toLowerCase();
+			return schemaName.toLowerCase(Locale.ROOT);
 		}
 		else {
 			return schemaName;
@@ -352,7 +353,7 @@ public class GenericTableMetaDataProvider implements TableMetaDataProvider {
 			Map<String, TableMetaData> tableMeta) {
 
 		if (schemaName != null) {
-			TableMetaData tmd = tableMeta.get(schemaName.toUpperCase());
+			TableMetaData tmd = tableMeta.get(schemaName.toUpperCase(Locale.ROOT));
 			if (tmd == null) {
 				throw new DataAccessResourceFailureException("Unable to locate table meta-data for '" +
 						tableName + "' in the '" + schemaName + "' schema");
@@ -365,7 +366,7 @@ public class GenericTableMetaDataProvider implements TableMetaDataProvider {
 		else {
 			TableMetaData tmd = tableMeta.get(getDefaultSchema());
 			if (tmd == null) {
-				tmd = tableMeta.get(this.userName != null ? this.userName.toUpperCase() : "");
+				tmd = tableMeta.get(this.userName != null ? this.userName.toUpperCase(Locale.ROOT) : "");
 			}
 			if (tmd == null) {
 				tmd = tableMeta.get("PUBLIC");

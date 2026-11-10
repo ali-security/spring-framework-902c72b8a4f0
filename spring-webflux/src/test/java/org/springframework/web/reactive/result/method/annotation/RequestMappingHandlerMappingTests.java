@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
+import java.util.Locale;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -152,7 +153,7 @@ public class RequestMappingHandlerMappingTests {
 
 
 	private RequestMappingInfo assertComposedAnnotationMapping(RequestMethod requestMethod) throws Exception {
-		String methodName = requestMethod.name().toLowerCase();
+		String methodName = requestMethod.name().toLowerCase(Locale.ROOT);
 		String path = "/" + methodName;
 
 		return assertComposedAnnotationMapping(methodName, path, requestMethod);

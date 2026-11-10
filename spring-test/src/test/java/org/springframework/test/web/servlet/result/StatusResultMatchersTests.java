@@ -19,7 +19,7 @@ package org.springframework.test.web.servlet.result;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.core.Conventions;
@@ -73,7 +73,7 @@ public class StatusResultMatchersTests {
 	}
 
 	private Method getMethodForHttpStatus(HttpStatus status) throws NoSuchMethodException {
-		String name = status.name().toLowerCase().replace("_", "-");
+		String name = status.name().toLowerCase(Locale.ROOT).replace("_", "-");
 		name = "is" + StringUtils.capitalize(Conventions.attributeNameToPropertyName(name));
 		return StatusResultMatchers.class.getMethod(name);
 	}

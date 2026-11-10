@@ -18,6 +18,7 @@ package org.springframework.web.reactive.result.method.annotation;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Locale;
 
 import org.reactivestreams.Publisher;
 
@@ -68,7 +69,7 @@ class RequestMappingIntegrationTests extends AbstractRequestMappingIntegrationTe
 		HttpHeaders headers = getRestTemplate().headForHeaders(url);
 		String contentType = headers.getFirst("Content-Type");
 		assertThat(contentType).isNotNull();
-		assertThat(contentType.toLowerCase()).isEqualTo("text/html;charset=utf-8");
+		assertThat(contentType.toLowerCase(Locale.ROOT)).isEqualTo("text/html;charset=utf-8");
 		assertThat(headers.getContentLength()).isEqualTo(3);
 	}
 

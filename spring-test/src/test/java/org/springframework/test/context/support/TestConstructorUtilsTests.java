@@ -33,6 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.context.TestConstructor.AutowireMode.ALL;
 import static org.springframework.test.context.TestConstructor.AutowireMode.ANNOTATED;
 
+import java.util.Locale;
+
 /**
  * Unit tests for {@link TestConstructorUtils}.
  *
@@ -85,10 +87,10 @@ class TestConstructorUtilsTests {
 		setGlobalFlag(ALL.name());
 		assertAutowirable(testClass);
 
-		setGlobalFlag(ALL.name().toLowerCase());
+		setGlobalFlag(ALL.name().toLowerCase(Locale.ROOT));
 		assertAutowirable(testClass);
 
-		setGlobalFlag("\t" + ALL.name().toLowerCase() + "   ");
+		setGlobalFlag("\t" + ALL.name().toLowerCase(Locale.ROOT) + "   ");
 		assertAutowirable(testClass);
 
 		setGlobalFlag("bogus");

@@ -27,6 +27,8 @@ import org.springframework.test.context.junit.SpringJUnitJupiterTestSuite;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+import java.util.Locale;
+
 /**
  * Integration tests which verify support for {@link EnabledIf @EnabledIf}
  * in conjunction with the {@link SpringExtension} in a JUnit Jupiter environment.
@@ -111,7 +113,7 @@ class EnabledIfTests {
 		@Test
 		@EnabledOnMac
 		void enabledIfWithSpelOsCheckInCustomComposedAnnotation() {
-			String os = System.getProperty("os.name").toLowerCase();
+			String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
 			assertThat(os).as("This test must be enabled on Mac OS").contains("mac");
 			assertThat(os).as("This test must be disabled on Windows").doesNotContain("win");
 		}
